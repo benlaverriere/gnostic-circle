@@ -43,7 +43,7 @@ function phrasesInRing(
 ): void {
   const phraseCount = phrases.length;
   const angleIncrement = Const.two_pi / phraseCount;
-  const phraseFont: Font = new Font(size, 'Georgia');
+  const phraseFont: Font = new Font(size, 'Cardo');
   const context = form.ctx;
   Create.radialPts(
     space.center,
