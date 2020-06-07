@@ -67,7 +67,8 @@ function phrasesAlongRingAutosize(
 ): void {
   const phraseCount = phrases.length;
   const angleIncrement = Const.two_pi / phraseCount;
-  const phraseFont: Font = new Font(0.5 * ((outerRadius - innerRadius) * scale), fontFamily);
+  const fontSize = 0.5 * ((outerRadius - innerRadius) * scale);
+  const phraseFont: Font = new Font(fontSize, fontFamily);
   form.font(phraseFont);
 
   const context = form.ctx;
@@ -189,12 +190,12 @@ space.add({
     titleText(scale, offset);
 
     phrasesAlongRingAutosize(Words.actions, 'Cardo', scale, ring_radii[2], ring_radii[3], 0, 3);
-    phrasesAlongRing(
+    phrasesAlongRingAutosize(
       Words.genders,
-      new Font(6, 'Cardo'),
+      'Cardo',
       scale,
-      ring_radii[2],
-      ring_radii[3],
+      ring_radii[2] + 0.01,
+      ring_radii[3] - 0.01,
       (Const.two_pi * 0.5) / 12,
       1,
     );
