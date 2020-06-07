@@ -53,7 +53,7 @@ module.exports = {
   plugins: [
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
-      title: 'PTS',
+      title: 'gnostic circle',
       template: './src/index.html',
     }),
   ],
