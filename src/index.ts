@@ -1,4 +1,18 @@
-import { Bound, CanvasForm, CanvasSpace, Circle, Const, Create, Font, Line, Num, Group, Pt, Rectangle } from 'pts';
+import {
+  Bound,
+  CanvasForm,
+  CanvasSpace,
+  Circle,
+  Const,
+  Create,
+  Font,
+  Line,
+  Num,
+  Group,
+  Pt,
+  Rectangle,
+  Shaping,
+} from 'pts';
 import Words from './words';
 
 const space: CanvasSpace = new CanvasSpace('#pts').setup({
@@ -145,13 +159,19 @@ function rings(scale: number, ringRadii: number[]): void {
     });
 }
 
-function divisions(scale: number, divisionCount: number, innerRadius: number, outerRadius: number): void {
+function divisions(
+  scale: number,
+  divisionCount: number,
+  innerRadius: number,
+  outerRadius: number,
+  fractionalAngleOffset = 0,
+): void {
   form.strokeOnly('white');
-  const innerVertices: Group = Create.radialPts(space.center, innerRadius * scale, divisionCount);
+  const angleOffset = fractionalAngleOffset * (Const.two_pi / divisionCount);
+  const innerVertices: Group = Create.radialPts(space.center, innerRadius * scale, divisionCount, angleOffset);
+  const outerVertices: Group = Create.radialPts(space.center, outerRadius * scale, divisionCount, angleOffset);
   innerVertices.forEach((vertex, index) => {
-    form.line(
-      Line.fromAngle(vertex, (index - 3) * (Const.two_pi / divisionCount), (outerRadius - innerRadius) * scale),
-    );
+    form.line([innerVertices[index], outerVertices[index]]);
   });
 }
 
@@ -177,16 +197,25 @@ function fontBetween(minSize: number, maxSize: number, family: string): (number)
   return (offset) => new Font(minSize + (maxSize - minSize) * offset, family);
 }
 
+const ring_radii: number[] = [0.65, 0.71, 0.75, 0.81, 0.85];
 space.add({
   animate: (time) => {
-    const offset = Num.cycle((time % 8000) / 8000);
     const constraint = Math.min(space.height, space.width) / 4;
+    const offset = Num.cycle((time % 8000) / 8000);
+
+    const clockTickSpace = 2000;
+    const clockTick = Shaping.exponentialIn((time % clockTickSpace) / clockTickSpace, 2, 0.05) + 1;
+    const clockTickIndex = (count) => Math.floor((time / clockTickSpace) % count);
+
+    const sweepTiming = 3000;
+    const sweepTick = Shaping.quadraticInOut((time % sweepTiming) / sweepTiming, 2) + 1;
+    const sweepTickIndex = (count) => Math.floor((time / sweepTiming) % count);
+
     const scale = constraint * 0.2 * offset + constraint * 1.7;
 
-    const ring_radii: number[] = [0.65, 0.71, 0.75, 0.81, 0.85];
     rings(scale, ring_radii);
     enneagram(scale, ring_radii[1]);
-    divisions(scale, 12, ring_radii[0], ring_radii[2]);
+    divisions(scale, 12, ring_radii[0], ring_radii[2], clockTick);
     titleText(scale, offset);
 
     phrasesAlongRingAutosize(Words.actions, 'Cardo', scale, ring_radii[2], ring_radii[3], 0, 3);
@@ -205,8 +234,8 @@ space.add({
       scale,
       ring_radii[1],
       ring_radii[2],
-      (Const.two_pi * 0.5) / 12,
-      3,
+      (Const.pi / 12) * clockTick,
+      3 - clockTickIndex(Words.elements.length),
     );
     phrasesAlongRingAutosize(
       Words.qualities.map((word) => word.toUpperCase()),
@@ -214,8 +243,8 @@ space.add({
       scale,
       ring_radii[3] + 0.008,
       ring_radii[4] - 0.008,
-      (Const.two_pi * 1) / 12 / 3 / 2,
-      9,
+      (Const.pi / Words.qualities.length) * -clockTick,
+      9 + clockTickIndex(Words.qualities.length),
     );
     phrasesAlongRingAutosize(
       Words.zodiacSymbols,
@@ -223,8 +252,8 @@ space.add({
       scale,
       ring_radii[0],
       ring_radii[1],
-      (Const.two_pi * 0.5) / 12,
-      3,
+      (Const.pi / Words.zodiacSymbols.length) * clockTick,
+      3 - clockTickIndex(Words.zodiacSymbols.length),
     );
     phrasesAlongRingAutosize(
       Words.zodiacThemes,
@@ -236,8 +265,24 @@ space.add({
       3,
     );
 
-    phrasesAlongRing(Words.quadrantBig, new Font(36, 'Helvetica Neue'), scale, 1.2, 1.3, -Const.quarter_pi, 1);
-    phrasesAlongRing(Words.quadrantSmall, new Font(10, 'Helvetica Neue'), scale, 1.12, 1.2, -Const.quarter_pi, 1);
+    phrasesAlongRing(
+      Words.quadrantBig,
+      new Font(36, 'Helvetica Neue'),
+      scale,
+      1.2,
+      1.3,
+      -Const.quarter_pi * sweepTick,
+      1 + sweepTickIndex(Words.quadrantBig.length),
+    );
+    phrasesAlongRing(
+      Words.quadrantSmall,
+      new Font(10, 'Helvetica Neue'),
+      scale,
+      1.12,
+      1.2,
+      -Const.quarter_pi * sweepTick,
+      1 + sweepTickIndex(Words.quadrantSmall.length),
+    );
 
     phrasesOutsideRing(Words.hemispheres, new Font(13, 'Cardo'), scale, ring_radii[4], -Const.half_pi, 0);
     phrasesOutsideRing(Words.squares, new Font(11, 'Cardo'), scale, ring_radii[4], 0, 0);
