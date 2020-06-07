@@ -7,6 +7,7 @@ import {
   Create,
   Font,
   Line,
+  Num,
   Group,
   Pt,
   Rectangle,
@@ -40,6 +41,7 @@ function phrasesInRing(
   innerRadius: number,
   outerRadius: number,
   angleOffset: number,
+  indexOffset = 0,
 ): void {
   const phraseCount = phrases.length;
   const angleIncrement = Const.two_pi / phraseCount;
@@ -50,8 +52,10 @@ function phrasesInRing(
     ((innerRadius + outerRadius) / 2) * scale,
     phraseCount,
     angleOffset,
-  ).forEach((anchor, index) => {
-    let rotation = index * angleIncrement + angleOffset + Const.half_pi;
+  ).forEach((anchor, raw_index) => {
+    const index = (raw_index + indexOffset + phraseCount) % phraseCount;
+    console.log(raw_index, '-->', index, phraseCount);
+    let rotation = raw_index * angleIncrement + angleOffset + Const.half_pi;
     // flip text if it would be upside-down
     if (0 < rotation && rotation < Const.pi) {
       rotation -= Const.pi;
@@ -230,21 +234,45 @@ const zodiacThemes = [
   'New Beginnings',
 ];
 
+const quadrantBig = [
+  'PHYSICAL',
+  'SPIRITUAL',
+  'MENTAL',
+  'EMOTIONAL',
+];
+
+const quadrantSmall = [
+  'DIFFERENTIATION',
+  'UNITY',
+  'INTEGRATION',
+  'INDIVIDUATION',
+];
+
 space.add({
   animate: (time, ftime) => {
     let scale =
       Math.hypot((space.pointer.x - space.center.x) ** 2, (space.pointer.y - space.center.y) ** 2) /
       100;
-    scale = 400;
-    const ring_radii: number[] = [0.65, 0.7, 0.75, 0.8, 0.85];
+    let offset = Num.cycle( time%5000/5000 );
+    let constraint = Math.min(space.height, space.width) / 4;
+    scale = constraint * offset + constraint;
+    const ring_radii: number[] = [0.65, 0.71, 0.75, 0.81, 0.85];
     rings(scale, ring_radii);
     enneagram(scale, ring_radii[1]);
     divisions(scale, 12, ring_radii[0], ring_radii[2]);
     titleText(scale);
 
-    phrasesInRing(scale, actionList, 8, ring_radii[2], ring_radii[3], 0);
-    phrasesInRing(scale, genderList, 6, ring_radii[2], ring_radii[3], (Const.two_pi * 0.5) / 12);
-    phrasesInRing(scale, elementList, 8, ring_radii[1], ring_radii[2], (Const.two_pi * 0.5) / 12);
+    phrasesInRing(scale, actionList, 8, ring_radii[2], ring_radii[3], 0, 3);
+    phrasesInRing(scale, genderList, 6, ring_radii[2], ring_radii[3], (Const.two_pi * 0.5) / 12, 1);
+    phrasesInRing(
+      scale,
+      elementList,
+      8,
+      ring_radii[1],
+      ring_radii[2],
+      (Const.two_pi * 0.5) / 12,
+      3,
+    );
     phrasesInRing(
       scale,
       qualityList,
@@ -252,6 +280,7 @@ space.add({
       ring_radii[3],
       ring_radii[4],
       (Const.two_pi * 1) / 12 / 3 / 2,
+      9,
     );
     phrasesInRing(
       scale,
@@ -260,6 +289,7 @@ space.add({
       ring_radii[0],
       ring_radii[1],
       (Const.two_pi * 0.5) / 12,
+      3,
     );
     phrasesInRing(
       scale,
@@ -268,7 +298,11 @@ space.add({
       ring_radii[0] - 0.05,
       ring_radii[0],
       (Const.two_pi * 0.5) / 12,
+      3,
     );
+
+    phrasesInRing(scale, quadrantBig, 36, 1.2, 1.3, -Const.quarter_pi, 1);
+    phrasesInRing(scale, quadrantSmall, 10, 1.12, 1.2, -Const.quarter_pi, 1);
   },
 });
 
