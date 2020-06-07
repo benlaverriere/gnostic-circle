@@ -1,17 +1,5 @@
-import {
-  Bound,
-  CanvasForm,
-  CanvasSpace,
-  Circle,
-  Const,
-  Create,
-  Font,
-  Line,
-  Num,
-  Group,
-  Pt,
-  Rectangle,
-} from 'pts';
+import { Bound, CanvasForm, CanvasSpace, Circle, Const, Create, Font, Line, Num, Group, Pt, Rectangle } from 'pts';
+import Words from './words';
 
 const space: CanvasSpace = new CanvasSpace('#pts').setup({
   bgcolor: 'black',
@@ -22,15 +10,7 @@ const form: CanvasForm = space.getForm();
 
 function enneagram(scale: number, radius: number) {
   const vertices: Group = Create.radialPts(space.center, radius * scale, 9);
-  form.line([
-    vertices[5],
-    vertices[7],
-    vertices[1],
-    vertices[4],
-    vertices[2],
-    vertices[8],
-    vertices[5],
-  ]);
+  form.line([vertices[5], vertices[7], vertices[1], vertices[4], vertices[2], vertices[8], vertices[5]]);
   form.line([vertices[0], vertices[3], vertices[6], vertices[0]]);
 }
 
@@ -49,35 +29,73 @@ function phrasesAlongRing(
   form.font(phraseFont);
 
   const context = form.ctx;
-  Create.radialPts(
-    space.center,
-    ((innerRadius + outerRadius) / 2) * scale,
-    phraseCount,
-    angleOffset,
-  ).forEach((anchor, raw_index) => {
-    const index = (raw_index + indexOffset + phraseCount) % phraseCount;
-    if (!phrases[index]) {
-      return;
-    }
-    const textWidth = form.getTextWidth(phrases[index]);
+  Create.radialPts(space.center, ((innerRadius + outerRadius) / 2) * scale, phraseCount, angleOffset).forEach(
+    (anchor, raw_index) => {
+      const index = (raw_index + indexOffset + phraseCount) % phraseCount;
+      if (!phrases[index]) {
+        return;
+      }
+      const textWidth = form.getTextWidth(phrases[index]);
 
-    let rotation = raw_index * angleIncrement + angleOffset + Const.half_pi;
+      let rotation = raw_index * angleIncrement + angleOffset + Const.half_pi;
 
-    // flip text if it would be upside-down
-    if (anchor.y > space.center.y) {
-      rotation -= Const.pi;
-    }
+      // flip text if it would be upside-down
+      if (anchor.y > space.center.y) {
+        rotation -= Const.pi;
+      }
 
-    context.save();
-    context.translate(anchor.x, anchor.y);
-    context.rotate(rotation);
+      context.save();
+      context.translate(anchor.x, anchor.y);
+      context.rotate(rotation);
 
-    // TODO width calculation might be causing some flickering?
-    const phraseBox = Rectangle.fromCenter(new Pt(), textWidth, font.size * 2);
-    form.textBox(phraseBox, phrases[index]);
+      const phraseBox = Rectangle.fromCenter(new Pt(), textWidth, phraseFont.size * 2);
+      form.textBox(phraseBox, phrases[index]);
 
-    context.restore();
-  });
+      context.restore();
+    },
+  );
+}
+
+function phrasesAlongRingAutosize(
+  phrases: string[],
+  fontFamily: string,
+  scale: number,
+  innerRadius: number,
+  outerRadius: number,
+  angleOffset = 0,
+  indexOffset = 0,
+): void {
+  const phraseCount = phrases.length;
+  const angleIncrement = Const.two_pi / phraseCount;
+  const phraseFont: Font = new Font(0.5 * ((outerRadius - innerRadius) * scale), fontFamily);
+  form.font(phraseFont);
+
+  const context = form.ctx;
+  Create.radialPts(space.center, ((innerRadius + outerRadius) / 2) * scale, phraseCount, angleOffset).forEach(
+    (anchor, raw_index) => {
+      const index = (raw_index + indexOffset + phraseCount) % phraseCount;
+      if (!phrases[index]) {
+        return;
+      }
+      const textWidth = form.getTextWidth(phrases[index]);
+
+      let rotation = raw_index * angleIncrement + angleOffset + Const.half_pi;
+
+      // flip text if it would be upside-down
+      if (anchor.y > space.center.y) {
+        rotation -= Const.pi;
+      }
+
+      context.save();
+      context.translate(anchor.x, anchor.y);
+      context.rotate(rotation);
+
+      const phraseBox = Rectangle.fromCenter(new Pt(), textWidth, phraseFont.size * 2);
+      form.textBox(phraseBox, phrases[index]);
+
+      context.restore();
+    },
+  );
 }
 
 function phrasesOutsideRing(
@@ -98,8 +116,7 @@ function phrasesOutsideRing(
       if (!phrases[index]) {
         return;
       }
-      const textWidth =
-        phrases[index].length > 2 ? form.getTextWidth(phrases[index]) : font.size * 3;
+      const textWidth = phrases[index].length > 2 ? form.getTextWidth(phrases[index]) : font.size * 3;
       let align: CanvasTextAlign = 'center';
       const newAnchor: Pt = new Pt(anchor);
       if (anchor.x < space.center.x) {
@@ -127,21 +144,12 @@ function rings(scale: number, ringRadii: number[]): void {
     });
 }
 
-function divisions(
-  scale: number,
-  divisionCount: number,
-  innerRadius: number,
-  outerRadius: number,
-): void {
+function divisions(scale: number, divisionCount: number, innerRadius: number, outerRadius: number): void {
   form.strokeOnly('white');
   const innerVertices: Group = Create.radialPts(space.center, innerRadius * scale, divisionCount);
   innerVertices.forEach((vertex, index) => {
     form.line(
-      Line.fromAngle(
-        vertex,
-        (index - 3) * (Const.two_pi / divisionCount),
-        (outerRadius - innerRadius) * scale,
-      ),
+      Line.fromAngle(vertex, (index - 3) * (Const.two_pi / divisionCount), (outerRadius - innerRadius) * scale),
     );
   });
 }
@@ -149,9 +157,7 @@ function divisions(
 function titleText(scale: number, timeOffset: number): void {
   form.fillOnly('white');
 
-  const box: Bound = Bound.fromGroup(
-    Rectangle.fromCenter(space.center, scale * 0.75, scale * 0.35),
-  );
+  const box: Bound = Bound.fromGroup(Rectangle.fromCenter(space.center, scale * 0.75, scale * 0.35));
   const textBoxCenters: Group[] = Create.gridCells(box, 1, 10);
 
   const titleFont: Font = fontBetween(18, 24, 'Helvetica Neue')(timeOffset);
@@ -166,158 +172,25 @@ function titleText(scale: number, timeOffset: number): void {
   form.font(subtitleFont).textBox(textBoxCenters[9], 'Cosmology');
 }
 
-const actionList: string[] = [
-  'SEED/POTENTIAL',
-  'RELEASING',
-  'REORGANIZING',
-  'REVALUING',
-  'UNDERSTANDING',
-  'SHARING',
-  'REALIZING',
-  'IMPROVING',
-  'EXPRESSING',
-  'DECIDING',
-  'ORGANIZING',
-  'FOCUSING',
-];
-const genderList: string[] = [
-  'Feminine',
-  'Masculine',
-  'Feminine',
-  'Masculine',
-  'Feminine',
-  'Masculine',
-  'Feminine',
-  'Masculine',
-  'Feminine',
-  'Masculine',
-  'Feminine',
-  'Masculine',
-];
-const elementList: string[] = [
-  'MUTABLE WATER',
-  'FIXED AIR',
-  'CARDINAL EARTH',
-  'MUTABLE FIRE',
-  'FIXED WATER',
-  'CARDINAL AIR',
-  'MUTABLE EARTH',
-  'FIXED FIRE',
-  'CARDINAL WATER',
-  'MUTABLE AIR',
-  'FIXED EARTH',
-  'CARDINAL FIRE',
-];
-const qualityList: string[] = [
-  'vicissitudes',
-  'self-sacrifice',
-  'verity',
-  'repression',
-  'inspiration',
-  'originality',
-  'idealism',
-  'martyrdom?',
-  'organization',
-  'illumination',
-  'exploration',
-  'devotion',
-  '???',
-  'responsibility',
-  'resourcefulness',
-  'expiation???',
-  'independence',
-  'policy',
-  '???',
-  'experience',
-  'achievement',
-  'ambition',
-  'reformation',
-  'rulership',
-  'research',
-  'revelation',
-  '???',
-  'reason',
-  'fidelity',
-  'intuition',
-  'mastership',
-  'struggle',
-  'determination',
-  '???',
-  '???',
-  'activity',
-];
-
-const zodiacSymbols = ['♓', '♒', '♑', '♐', '♏', '♎', '♍', '♌', '♋', '♊', '♉', '♈'];
-
-const zodiacThemes = [
-  'Endings',
-  'Goals and Ideals',
-  'Mount Meru',
-  'Higher Mind',
-  'Death and Rebirth',
-  'Relationships',
-  'Health and Service',
-  'Creative Expression',
-  'Foundations',
-  'Lower Mind',
-  'Materiality',
-  'New Beginnings',
-];
-
-const quadrantBig = ['PHYSICAL', 'SPIRITUAL', 'MENTAL', 'EMOTIONAL'];
-
-const quadrantSmall = ['DIFFERENTIATION', 'UNITY', 'INTEGRATION', 'INDIVIDUATION'];
-
-const hemispheres = ['CONJUNCTION', 'OPPOSITION'];
-const squares = ['SQUARE', 'SQUARE'];
-const semisquares = ['SEMISQUARE', 'SESQUIQUADRATE', 'SESQUIQUADRATE', 'SEMISQUARE'];
-const trines = ['', 'TRINE', 'TRINE'];
-const sextiles = [
-  '',
-  'SEMISEXTILE',
-  'SEXTILE',
-  '',
-  '',
-  'INCONJUNCT',
-  '',
-  'INCONJUNCT',
-  '',
-  '',
-  'SEXTILE',
-  'SEMISEXTILE',
-];
-
-const planets = ['♇', '♆', '⛢', '♄', '♃', '♂', '♁', '♀', '☿'];
-
 function fontBetween(minSize: number, maxSize: number, family: string): (number) => Font {
   return (offset) => new Font(minSize + (maxSize - minSize) * offset, family);
 }
 
 space.add({
-  animate: (time, ftime) => {
-    let scale =
-      Math.hypot((space.pointer.x - space.center.x) ** 2, (space.pointer.y - space.center.y) ** 2) /
-      100;
+  animate: (time) => {
     const offset = Num.cycle((time % 8000) / 8000);
     const constraint = Math.min(space.height, space.width) / 4;
-    scale = constraint * 0.2 * offset + constraint * 1.7;
+    const scale = constraint * 0.2 * offset + constraint * 1.7;
+
     const ring_radii: number[] = [0.65, 0.71, 0.75, 0.81, 0.85];
     rings(scale, ring_radii);
     enneagram(scale, ring_radii[1]);
     divisions(scale, 12, ring_radii[0], ring_radii[2]);
     titleText(scale, offset);
 
+    phrasesAlongRingAutosize(Words.actions, 'Cardo', scale, ring_radii[2], ring_radii[3], 0, 3);
     phrasesAlongRing(
-      actionList,
-      fontBetween(6, 10, 'Cardo')(offset),
-      scale,
-      ring_radii[2],
-      ring_radii[3],
-      0,
-      3,
-    );
-    phrasesAlongRing(
-      genderList,
+      Words.genders,
       new Font(6, 'Cardo'),
       scale,
       ring_radii[2],
@@ -325,76 +198,53 @@ space.add({
       (Const.two_pi * 0.5) / 12,
       1,
     );
-    phrasesAlongRing(
-      elementList,
-      fontBetween(6, 8, 'Cardo')(offset),
+    phrasesAlongRingAutosize(
+      Words.elements,
+      'Cardo',
       scale,
       ring_radii[1],
       ring_radii[2],
       (Const.two_pi * 0.5) / 12,
       3,
     );
-    phrasesAlongRing(
-      qualityList,
-      new Font(6, 'Helvetica Neue'),
+    phrasesAlongRingAutosize(
+      Words.qualities,
+      'Helvetica Neue',
       scale,
       ring_radii[3],
       ring_radii[4],
       (Const.two_pi * 1) / 12 / 3 / 2,
       9,
     );
-    phrasesAlongRing(
-      zodiacSymbols,
-      new Font(13, 'Cardo'),
+    phrasesAlongRingAutosize(
+      Words.zodiacSymbols,
+      'Cardo',
       scale,
       ring_radii[0],
       ring_radii[1],
       (Const.two_pi * 0.5) / 12,
       3,
     );
-    phrasesAlongRing(
-      zodiacThemes,
-      fontBetween(7, 9, 'Helvetica Neue')(offset),
+    phrasesAlongRingAutosize(
+      Words.zodiacThemes,
+      'Helvetica Neue',
       scale,
-      ring_radii[0] - 0.05,
+      ring_radii[0] - 0.04,
       ring_radii[0],
       (Const.two_pi * 0.5) / 12,
       3,
     );
 
-    phrasesAlongRing(
-      quadrantBig,
-      new Font(36, 'Helvetica Neue'),
-      scale,
-      1.2,
-      1.3,
-      -Const.quarter_pi,
-      1,
-    );
-    phrasesAlongRing(
-      quadrantSmall,
-      new Font(10, 'Helvetica Neue'),
-      scale,
-      1.12,
-      1.2,
-      -Const.quarter_pi,
-      1,
-    );
+    phrasesAlongRing(Words.quadrantBig, new Font(36, 'Helvetica Neue'), scale, 1.2, 1.3, -Const.quarter_pi, 1);
+    phrasesAlongRing(Words.quadrantSmall, new Font(10, 'Helvetica Neue'), scale, 1.12, 1.2, -Const.quarter_pi, 1);
 
-    phrasesOutsideRing(hemispheres, new Font(13, 'Cardo'), scale, ring_radii[4], -Const.half_pi, 0);
-    phrasesOutsideRing(squares, new Font(11, 'Cardo'), scale, ring_radii[4], 0, 0);
-    phrasesOutsideRing(
-      semisquares,
-      new Font(10, 'Cardo'),
-      scale,
-      ring_radii[4],
-      -Const.quarter_pi,
-      0,
-    );
-    phrasesOutsideRing(trines, new Font(11, 'Cardo'), scale, ring_radii[4], -Const.half_pi, 0);
-    phrasesOutsideRing(sextiles, new Font(10, 'Cardo'), scale, ring_radii[4], -Const.half_pi, 0);
+    phrasesOutsideRing(Words.hemispheres, new Font(13, 'Cardo'), scale, ring_radii[4], -Const.half_pi, 0);
+    phrasesOutsideRing(Words.squares, new Font(11, 'Cardo'), scale, ring_radii[4], 0, 0);
+    phrasesOutsideRing(Words.semisquares, new Font(10, 'Cardo'), scale, ring_radii[4], -Const.quarter_pi, 0);
+    phrasesOutsideRing(Words.trines, new Font(11, 'Cardo'), scale, ring_radii[4], -Const.half_pi, 0);
+    phrasesOutsideRing(Words.sextiles, new Font(10, 'Cardo'), scale, ring_radii[4], -Const.half_pi, 0);
 
-    phrasesOutsideRing(planets, new Font(15, 'Cardo'), scale, 0.55, -Const.half_pi, 0);
+    phrasesOutsideRing(Words.planets, new Font(15, 'Cardo'), scale, 0.55, -Const.half_pi, 0);
   },
 });
 
