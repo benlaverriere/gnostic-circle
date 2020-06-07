@@ -209,11 +209,11 @@ space.add({
       3,
     );
     phrasesAlongRingAutosize(
-      Words.qualities,
+      Words.qualities.map((word) => word.toUpperCase()),
       'Helvetica Neue',
       scale,
-      ring_radii[3],
-      ring_radii[4],
+      ring_radii[3] + 0.008,
+      ring_radii[4] - 0.008,
       (Const.two_pi * 1) / 12 / 3 / 2,
       9,
     );
