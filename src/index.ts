@@ -1,18 +1,4 @@
-import {
-  Bound,
-  CanvasForm,
-  CanvasSpace,
-  Circle,
-  Const,
-  Create,
-  Font,
-  Line,
-  Num,
-  Group,
-  Pt,
-  Rectangle,
-  Shaping,
-} from 'pts';
+import { Bound, CanvasForm, CanvasSpace, Circle, Const, Create, Font, Num, Group, Pt, Rectangle, Shaping } from 'pts';
 import Words from './words';
 
 const space: CanvasSpace = new CanvasSpace('#pts').setup({
@@ -21,6 +7,9 @@ const space: CanvasSpace = new CanvasSpace('#pts').setup({
   resize: true,
 });
 const form: CanvasForm = space.getForm();
+
+const sans = 'Manrope';
+const serif = 'Cardo';
 
 function enneagram(scale: number, radius: number) {
   const vertices: Group = Create.radialPts(space.center, radius * scale, 9);
@@ -39,7 +28,7 @@ function phrasesAlongRing(
 ): void {
   const phraseCount = phrases.length;
   const angleIncrement = Const.two_pi / phraseCount;
-  const phraseFont: Font = font ?? new Font(font.size, 'Cardo');
+  const phraseFont: Font = font ?? new Font(font.size, serif);
   form.font(phraseFont);
 
   const context = form.ctx;
@@ -123,7 +112,7 @@ function phrasesOutsideRing(
 ): void {
   const margin = 10;
   const phraseCount = phrases.length;
-  const phraseFont: Font = font ?? new Font(font.size, 'Cardo');
+  const phraseFont: Font = font ?? new Font(font.size, serif);
   form.font(phraseFont);
   Create.radialPts(space.center, innerRadius * scale + margin, phraseCount, angleOffset).forEach(
     (anchor, raw_index) => {
@@ -181,8 +170,8 @@ function titleText(scale: number, timeOffset: number): void {
   const box: Bound = Bound.fromGroup(Rectangle.fromCenter(space.center, scale * 0.75, scale * 0.35));
   const textBoxCenters: Group[] = Create.gridCells(box, 1, 10);
 
-  const titleFont: Font = fontBetween(18, 24, 'Helvetica Neue')(timeOffset);
-  const subtitleFont: Font = fontBetween(12, 14, 'Helvetica Neue')(timeOffset);
+  const titleFont: Font = fontBetween(18, 24, 'Manrope')(timeOffset);
+  const subtitleFont: Font = fontBetween(12, 14, sans)(timeOffset);
 
   form.alignText('center');
   form.font(titleFont).textBox(textBoxCenters[0], 'The Gnostic Circle');
@@ -199,7 +188,8 @@ function fontBetween(minSize: number, maxSize: number, family: string): (number)
 
 const ring_radii: number[] = [0.65, 0.71, 0.75, 0.81, 0.85];
 space.add({
-  animate: (time) => {
+  animate: (time, frame_rendering_time) => {
+    console.log(frame_rendering_time);
     const constraint = Math.min(space.height, space.width) / 4;
     const offset = Num.cycle((time % 8000) / 8000);
 
@@ -218,10 +208,10 @@ space.add({
     divisions(scale, 12, ring_radii[0], ring_radii[2], clockTick);
     titleText(scale, offset);
 
-    phrasesAlongRingAutosize(Words.actions, 'Cardo', scale, ring_radii[2], ring_radii[3], 0, 3);
+    phrasesAlongRingAutosize(Words.actions, serif, scale, ring_radii[2], ring_radii[3], 0, 3);
     phrasesAlongRingAutosize(
       Words.genders,
-      'Cardo',
+      serif,
       scale,
       ring_radii[2] + 0.01,
       ring_radii[3] - 0.01,
@@ -230,7 +220,7 @@ space.add({
     );
     phrasesAlongRingAutosize(
       Words.elements,
-      'Cardo',
+      serif,
       scale,
       ring_radii[1],
       ring_radii[2],
@@ -239,7 +229,7 @@ space.add({
     );
     phrasesAlongRingAutosize(
       Words.qualities.map((word) => word.toUpperCase()),
-      'Helvetica Neue',
+      sans,
       scale,
       ring_radii[3] + 0.008,
       ring_radii[4] - 0.008,
@@ -248,7 +238,7 @@ space.add({
     );
     phrasesAlongRingAutosize(
       Words.zodiacSymbols,
-      'Cardo',
+      serif,
       scale,
       ring_radii[0],
       ring_radii[1],
@@ -257,7 +247,7 @@ space.add({
     );
     phrasesAlongRingAutosize(
       Words.zodiacThemes,
-      'Helvetica Neue',
+      sans,
       scale,
       ring_radii[0] - 0.04,
       ring_radii[0],
@@ -267,7 +257,7 @@ space.add({
 
     phrasesAlongRing(
       Words.quadrantBig,
-      new Font(36, 'Helvetica Neue'),
+      new Font(36, sans),
       scale,
       1.2,
       1.3,
@@ -276,7 +266,7 @@ space.add({
     );
     phrasesAlongRing(
       Words.quadrantSmall,
-      new Font(10, 'Helvetica Neue'),
+      new Font(10, sans),
       scale,
       1.12,
       1.2,
@@ -284,13 +274,13 @@ space.add({
       1 + sweepTickIndex(Words.quadrantSmall.length),
     );
 
-    phrasesOutsideRing(Words.hemispheres, new Font(13, 'Cardo'), scale, ring_radii[4], -Const.half_pi, 0);
-    phrasesOutsideRing(Words.squares, new Font(11, 'Cardo'), scale, ring_radii[4], 0, 0);
-    phrasesOutsideRing(Words.semisquares, new Font(10, 'Cardo'), scale, ring_radii[4], -Const.quarter_pi, 0);
-    phrasesOutsideRing(Words.trines, new Font(11, 'Cardo'), scale, ring_radii[4], -Const.half_pi, 0);
-    phrasesOutsideRing(Words.sextiles, new Font(10, 'Cardo'), scale, ring_radii[4], -Const.half_pi, 0);
+    phrasesOutsideRing(Words.hemispheres, new Font(13, serif), scale, ring_radii[4], -Const.half_pi, 0);
+    phrasesOutsideRing(Words.squares, new Font(11, serif), scale, ring_radii[4], 0, 0);
+    phrasesOutsideRing(Words.semisquares, new Font(10, serif), scale, ring_radii[4], -Const.quarter_pi, 0);
+    phrasesOutsideRing(Words.trines, new Font(11, serif), scale, ring_radii[4], -Const.half_pi, 0);
+    phrasesOutsideRing(Words.sextiles, new Font(10, serif), scale, ring_radii[4], -Const.half_pi, 0);
 
-    phrasesOutsideRing(Words.planets, new Font(15, 'Cardo'), scale, 0.55, -Const.half_pi, 0);
+    phrasesOutsideRing(Words.planets, new Font(15, serif), scale, 0.55, -Const.half_pi, 0);
   },
 });
 
