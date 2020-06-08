@@ -187,6 +187,7 @@ function fontBetween(minSize: number, maxSize: number, family: string): (number)
 }
 
 const ring_radii: number[] = [0.65, 0.71, 0.75, 0.81, 0.85];
+
 space.add({
   animate: (time, frame_rendering_time) => {
     console.log(frame_rendering_time);
